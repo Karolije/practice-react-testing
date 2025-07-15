@@ -62,9 +62,9 @@ class LoginForm extends React.Component {
     const authResp = tryAuth(login.value, password.value);
 
     if (typeof authResp.then === "function") {
-      authResp.catch(() => this.throwError());
+      authResp.catch(() => this.setState({ hasError: true }));
     } else if (!authResp) {
-      this.throwError();
+      this.setState({ hasError: true });
     }
   };
 
