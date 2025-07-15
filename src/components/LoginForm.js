@@ -1,69 +1,110 @@
-import React, { useState } from 'react';
+import React from "react";
 
-function LoginForm(props) {
-    const userDefault = {
-        login: {
-            value: '',
-            error: '',
-        },
-        password: {
-            value: '',
-            error: '',
-        }
+class LoginForm extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      login: {
+        value: "",
+        error: "",
+      },
+      password: {
+        value: "",
+        error: "",
+      },
+      hasError: false,
+    };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  checkValue(value) {
+    if (value.length <= 3) {
+      throw new Error("The field is too short!");
+    }
+  }
+
+  handleChange = (e) => {
+    const { name: field, value } = e.target;
+
+    if (typeof this.state[field] !== "undefined") {
+      try {
+        this.checkValue(value);
+        this.setState({
+          [field]: {
+            value,
+            error: "",
+          },
+        });
+      } catch (err) {
+        this.setState({
+          [field]: {
+            value,
+            error: err.message,
+          },
+        });
+      }
+    }
+  };
+
+  throwError() {
+    throw new Error("Incorrect data!");
+  }
+
+  handleSubmit = (e) => {
+    e.preventDefault();
+
+    const { tryAuth } = this.props;
+    const { login, password } = this.state;
+
+    const authResp = tryAuth(login.value, password.value);
+
+    if (typeof authResp.then === "function") {
+      authResp.catch(() => this.throwError());
+    } else if (!authResp) {
+      this.throwError();
+    }
+  };
+
+  render() {
+    const { login, password, hasError } = this.state;
+
+    if (hasError) {
+      return <h1>Incorrect data.</h1>;
     }
 
-    const [user, setUser] = useState(userDefault);
-
-    function checkValue(value) {
-        if(value.length <= 3)  {
-            throw new Error('The field is too short!');
-        }
-    }
-
-    function handleChange(e) {
-        const {name: field, value} = e.target;
-        if(typeof user[field] !== 'undefined') {
-            checkValue(value);
-            setUser({...user, [field]: {value, error: ''} });
-        }
-    }
-
-    function throwError() {
-        throw new Error('Incorrect data!');
-    }
-
-    function handleSubmit(e) {
-        e.preventDefault();
-
-        const {tryAuth} = props;
-        const {login, password} = e.target.elements;
-
-        const authResp = tryAuth(login.value, password.value);
-        if(typeof authResp.then === 'function') { // if return Promise
-            authResp.catch(() => throwError() );
-        } else if(!authResp) {
-            throwError()
-        }
-    }
-
-    const {login, password} = user;
     return (
-        <form onSubmit={ handleSubmit }>
-            <p>
-                <label>
-                    login: <input name="login" value={ login.value } onChange={e => handleChange(e)} />
-                    { login.error && <strong>{ login.error }</strong> }
-                </label>
-            </p>
-            <p>
-                <label>
-                    password: <input name="password" value={ password.value } onChange={e => handleChange(e)} />
-                    { password.error && <strong>{ password.error }</strong> }
-                </label>
-            </p>
-            <p><button>send</button></p>
-        </form>
+      <form onSubmit={this.handleSubmit}>
+        <p>
+          <label>
+            login:
+            <input
+              name="login"
+              value={login.value}
+              onChange={this.handleChange}
+            />
+            {login.error && <strong>{login.error}</strong>}
+          </label>
+        </p>
+        <p>
+          <label>
+            password:
+            <input
+              name="password"
+              value={password.value}
+              onChange={this.handleChange}
+            />
+            {password.error && <strong>{password.error}</strong>}
+          </label>
+        </p>
+        <p>
+          <button>send</button>
+        </p>
+      </form>
     );
+  }
 }
 
 export default LoginForm;
